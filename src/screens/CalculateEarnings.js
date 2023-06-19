@@ -3,6 +3,7 @@ import {
   Image,
   StyleSheet,
   Text,
+  ToastAndroid,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -16,15 +17,18 @@ const CalculateEarnings = () => {
   const [year, setYear] = useState(3);
   const [select, setSelect] = useState('USDT');
 
-  const [timeline, setTimeline] = useState(0);
+  const [timeline, setTimeline] = useState(1);
   const [invested, setInvested] = useState(false);
   const [type, setType] = useState('Grayscale Bitcoin Trust');
   const [list, setList] = useState();
+  // const [poolDetails, setPoolDetails] = useState();
+  const [poolId, setPoolId] = useState();
 
   const baseUrl = 'https://dev-testnet.nordl.io';
 
   const AmountArr = ['0', '3K', '6K', '12K', '15K', '18K', '21K'];
   const YearArr = ['10 yrs', '8 yrs', '6 yrs', '4 yrs', '2 yrs', 'Present'];
+  const [result, setResult] = useState();
 
   function nFormatter(num) {
     if (num >= 1000000000) {
@@ -57,7 +61,7 @@ const CalculateEarnings = () => {
     }
   };
 
-  const poolDetails = async id => {
+  const _poolDetails = async id => {
     try {
       const headers = {
         'Content-Type': 'application/json',
@@ -68,23 +72,50 @@ const CalculateEarnings = () => {
         baseURL: baseUrl,
         headers,
       });
-      console.log('54', data);
+      console.log('54', data.data);
+      // setPoolDetails(data.data);
+      setYear(data.data.yearlyOptions);
     } catch (err) {
       console.log(err);
     }
   };
 
+  const investCount = (timeline, year) => {
+    let invest = 0;
+    switch (timeline) {
+      case 1:
+        invest = year * 12;
+        break;
+      case 2:
+        invest = year * 365;
+        break;
+      case 3:
+        invest = year * 1;
+        break;
+    }
+    return invest;
+  };
+
   const poolCalculator = async () => {
+    if (!poolId) {
+      ToastAndroid.show('Select pool', ToastAndroid.SHORT);
+      return;
+    }
+    if (!timeline) {
+      ToastAndroid.show('Select timeline', ToastAndroid.SHORT);
+      return;
+    }
     try {
       const headers = {
         'Content-Type': 'application/json',
       };
 
       const body = {
-        poolId: 1,
-        frqInDays: 30,
-        investmentCount: 12,
-        sipAmount: '5000000000000000000',
+        poolId: poolId,
+        frqInDays:
+          timeline == 1 ? 30 : timeline == 2 ? 1 : timeline == 3 ? 365 : 0,
+        investmentCount: investCount(timeline, year),
+        sipAmount: amount,
       };
       const data = await axios({
         method: 'POST',
@@ -93,7 +124,8 @@ const CalculateEarnings = () => {
         headers,
         data: body,
       });
-      console.log('192', data.config);
+      console.log('192', data);
+      setResult(data?.data?.data?.result);
     } catch (err) {
       console.log(err);
     }
@@ -105,44 +137,15 @@ const CalculateEarnings = () => {
 
   return (
     <View style={styles.maincontainer}>
-      <View
-        style={{
-          backgroundColor: '#ffffff',
-          borderRadius: moderateScale(30),
-          padding: moderateScale(13),
-          width: '95%',
-          shadowColor: '#fff',
-          shadowOffset: {
-            width: 0,
-            height: 2,
-          },
-          shadowOpacity: 0.23,
-          shadowRadius: 2.62,
-          elevation: 10,
-        }}>
+      <View style={styles.container}>
         {/* Top Header */}
+
         <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
           <View style={{height: moderateScale(32), width: moderateScale(32)}} />
 
-          <Text
-            style={{
-              fontFamily: 'DMSans-Bold',
-              fontSize: moderateScale(20),
-              color: '#252A48',
-              marginTop: verticalScale(25),
-            }}>
-            Calculate Earnings
-          </Text>
+          <Text style={styles.headers}>Calculate Earnings</Text>
 
-          <TouchableOpacity
-            style={{
-              height: moderateScale(32),
-              width: moderateScale(32),
-              backgroundColor: '#304FFE',
-              borderRadius: moderateScale(32 / 2),
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}>
+          <TouchableOpacity style={styles.crossbtn}>
             <Image
               source={require('../assets/icons/CrossIcon.png')}
               style={{
@@ -161,14 +164,7 @@ const CalculateEarnings = () => {
             justifyContent: 'space-between',
             marginHorizontal: horizontalScale(15),
           }}>
-          <Text
-            style={{
-              fontFamily: 'DMSans-Medium',
-              fontSize: moderateScale(14),
-              color: '#9EACDB',
-            }}>
-            Invested Amount
-          </Text>
+          <Text style={styles.textHead}>Invested Amount</Text>
           <View style={{flexDirection: 'row', alignItems: 'center'}}>
             <View
               style={{
@@ -258,25 +254,8 @@ const CalculateEarnings = () => {
           />
         </View>
         {/* Invested In  */}
-        <View
-          style={{
-            marginTop: moderateScale(30),
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginHorizontal: horizontalScale(15),
-            width: '100%',
-            zIndex: 9999,
-          }}>
-          <Text
-            style={{
-              fontFamily: 'DMSans-Medium',
-              fontSize: moderateScale(14),
-              color: '#9EACDB',
-              width: '30%',
-            }}>
-            Invested In
-          </Text>
+        <View style={styles.dropMain}>
+          <Text style={styles.textHead}>Invested In</Text>
 
           <View style={{width: '70%'}}>
             <TouchableOpacity
@@ -341,18 +320,10 @@ const CalculateEarnings = () => {
                       onPress={() => {
                         setType(item.poolName),
                           setInvested(!invested),
-                          // setPoolId(item.id);
-                          poolDetails(item.id);
+                          setPoolId(item.id);
+                        _poolDetails(item.id);
                       }}>
-                      <Text
-                        style={{
-                          fontFamily: 'DMSans-Medium',
-                          fontSize: moderateScale(14),
-                          color: '#000000',
-                          marginVertical: moderateScale(8),
-                        }}>
-                        {item.poolName}
-                      </Text>
+                      <Text style={styles.poolName}>{item.poolName}</Text>
                     </TouchableOpacity>
                   );
                 }}
@@ -369,30 +340,16 @@ const CalculateEarnings = () => {
             justifyContent: 'space-between',
             marginHorizontal: horizontalScale(15),
           }}>
-          <Text
-            style={{
-              fontFamily: 'DMSans-Medium',
-              fontSize: moderateScale(14),
-              color: '#9EACDB',
-            }}>
-            Investment Timeline
-          </Text>
+          <Text style={styles.textHead}>Investment Timeline</Text>
         </View>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginTop: moderateScale(5),
-            marginHorizontal: horizontalScale(35),
-            justifyContent: 'space-between',
-          }}>
+        <View style={styles.timeline}>
           <TouchableOpacity
             onPress={() => setTimeline(1)}
             style={{
-              width: horizontalScale(80),
-              height: moderateScale(23),
+              width: horizontalScale(90),
+              height: moderateScale(30),
               backgroundColor: timeline == 1 ? '#304FFE' : '#F3F3F3',
-              borderRadius: moderateScale(11.5),
+              borderRadius: moderateScale(15),
               justifyContent: 'center',
               alignItems: 'center',
             }}>
@@ -400,7 +357,7 @@ const CalculateEarnings = () => {
               style={{
                 fontFamily: 'DMSans-Medium',
                 fontSize: moderateScale(11),
-                color: timeline == 1 ? '#fff' : '#252A4820',
+                color: timeline == 1 ? '#fff' : '#252A4880',
               }}>
               Every Month
             </Text>
@@ -408,19 +365,18 @@ const CalculateEarnings = () => {
           <TouchableOpacity
             onPress={() => setTimeline(2)}
             style={{
-              width: horizontalScale(80),
-              height: moderateScale(23),
+              width: horizontalScale(90),
+              height: moderateScale(30),
               backgroundColor: timeline == 2 ? '#304FFE' : '#F3F3F3',
-              borderRadius: moderateScale(11.5),
+              borderRadius: moderateScale(15),
               justifyContent: 'center',
-
               alignItems: 'center',
             }}>
             <Text
               style={{
                 fontFamily: 'DMSans-Medium',
                 fontSize: moderateScale(11),
-                color: timeline == 2 ? '#fff' : '#252A4820',
+                color: timeline == 2 ? '#fff' : '#252A4880',
               }}>
               Every Day
             </Text>
@@ -428,10 +384,10 @@ const CalculateEarnings = () => {
           <TouchableOpacity
             onPress={() => setTimeline(3)}
             style={{
-              width: horizontalScale(80),
-              height: moderateScale(23),
+              width: horizontalScale(90),
+              height: moderateScale(30),
               backgroundColor: timeline == 3 ? '#304FFE' : '#F3F3F3',
-              borderRadius: moderateScale(11.5),
+              borderRadius: moderateScale(15),
               justifyContent: 'center',
               alignItems: 'center',
             }}>
@@ -439,7 +395,7 @@ const CalculateEarnings = () => {
               style={{
                 fontFamily: 'DMSans-Medium',
                 fontSize: moderateScale(11),
-                color: timeline == 3 ? '#fff' : '#252A4820',
+                color: timeline == 3 ? '#fff' : '#252A4880',
               }}>
               Every Year
             </Text>
@@ -454,14 +410,7 @@ const CalculateEarnings = () => {
             justifyContent: 'space-between',
             marginHorizontal: horizontalScale(15),
           }}>
-          <Text
-            style={{
-              fontFamily: 'DMSans-Medium',
-              fontSize: moderateScale(14),
-              color: '#9EACDB',
-            }}>
-            Invested From
-          </Text>
+          <Text style={styles.textHead}>Invested From</Text>
           <View style={{flexDirection: 'row', alignItems: 'center'}}>
             <View
               style={{
@@ -469,18 +418,9 @@ const CalculateEarnings = () => {
                 height: moderateScale(23),
                 backgroundColor: '#F3F3F3',
                 borderRadius: moderateScale(11.5),
-
                 justifyContent: 'center',
               }}>
-              <Text
-                style={{
-                  fontFamily: 'DMSans-Medium',
-                  fontSize: moderateScale(11),
-                  color: '#252A48',
-                  marginLeft: horizontalScale(12),
-                }}>
-                {year} yrs
-              </Text>
+              <Text style={styles.blktext}>{year} yrs</Text>
             </View>
           </View>
         </View>
@@ -550,7 +490,7 @@ const CalculateEarnings = () => {
               color: '#9EACDB',
               width: '45%',
             }}>
-            3600 USDT
+            {amount} USDT
           </Text>
         </View>
         <View
@@ -574,52 +514,76 @@ const CalculateEarnings = () => {
           <Text
             style={{
               fontFamily: 'DMSans-Bold',
-              fontSize: moderateScale(29),
+              fontSize: moderateScale(20),
               color: '#2BA24C',
               width: '47%',
             }}>
-            4200 USDT
+            {result
+              ? parseFloat(result?.resultData.at(-1).worthNowInUSD).toFixed(2)
+              : '0.00'}{' '}
+            USDT
           </Text>
         </View>
-        <View
-          style={{
-            height: moderateScale(18),
-            width: horizontalScale(65),
-            borderRadius: moderateScale(5),
-            backgroundColor: '#00DD9A20',
-            marginLeft: '53%',
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingHorizontal: horizontalScale(4),
-          }}>
-          <Image
-            source={require('../assets/icons/uparrow.png')}
+        {result?.absoluteReturns >= 0 ? (
+          <View
             style={{
-              height: moderateScale(10),
-              width: moderateScale(10),
-              resizeMode: 'contain',
-            }}
-          />
-          <Text
-            style={{
-              fontFamily: 'DMSans-Medium',
-              fontSize: moderateScale(12),
-              color: '#2BA24C',
+              height: moderateScale(18),
+              width: horizontalScale(70),
+              borderRadius: moderateScale(5),
+              backgroundColor: '#00DD9A20',
+              marginLeft: '53%',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingHorizontal: horizontalScale(4),
             }}>
-            19.08%
-          </Text>
-        </View>
+            <Image
+              source={require('../assets/icons/uparrow.png')}
+              style={{
+                height: moderateScale(10),
+                width: moderateScale(10),
+                resizeMode: 'contain',
+              }}
+            />
+            <Text style={[styles.percentTxt, {color: '#2BA24C'}]}>
+              {result.absoluteReturns ? result.absoluteReturns : 0}%
+            </Text>
+          </View>
+        ) : (
+          <View
+            style={{
+              height: moderateScale(18),
+              width: horizontalScale(70),
+              borderRadius: moderateScale(5),
+              backgroundColor: '#f0000920',
+              marginLeft: '53%',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingHorizontal: horizontalScale(4),
+            }}>
+            <Image
+              source={require('../assets/icons/uparrow.png')}
+              style={{
+                height: moderateScale(10),
+                width: moderateScale(10),
+                resizeMode: 'contain',
+                tintColor: 'red',
+                transform: [
+                  {
+                    rotate: '180deg',
+                  },
+                ],
+              }}
+            />
+            <Text style={[styles.percentTxt, {color: 'red'}]}>
+              {result?.absoluteReturns ? result.absoluteReturns : 0}%
+            </Text>
+          </View>
+        )}
         {/* Button */}
-        <TouchableOpacity style={styles.btn}>
-          <Text
-            style={{
-              fontFamily: 'DMSans-Medium',
-              fontSize: moderateScale(14),
-              color: '#fff',
-            }}>
-            Calculate
-          </Text>
+        <TouchableOpacity style={styles.btn} onPress={poolCalculator}>
+          <Text style={styles.btntext}>Calculate</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -635,6 +599,72 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F5F5F5',
   },
+  container: {
+    backgroundColor: '#ffffff',
+    borderRadius: moderateScale(30),
+    padding: moderateScale(13),
+    width: '95%',
+    shadowColor: '#fff',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.23,
+    shadowRadius: 2.62,
+    elevation: 10,
+  },
+  headers: {
+    fontFamily: 'DMSans-Bold',
+    fontSize: moderateScale(20),
+    color: '#252A48',
+    marginTop: verticalScale(25),
+  },
+  crossbtn: {
+    height: moderateScale(32),
+    width: moderateScale(32),
+    backgroundColor: '#304FFE',
+    borderRadius: moderateScale(32 / 2),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  textHead: {
+    fontFamily: 'DMSans-Medium',
+    fontSize: moderateScale(14),
+    color: '#9EACDB',
+  },
+  dropMain: {
+    marginTop: moderateScale(30),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: horizontalScale(15),
+    width: '100%',
+    zIndex: 9999,
+  },
+  poolName: {
+    fontFamily: 'DMSans-Medium',
+    fontSize: moderateScale(14),
+    color: '#000000',
+    marginVertical: moderateScale(8),
+  },
+  timeline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: moderateScale(5),
+    marginHorizontal: horizontalScale(35),
+    justifyContent: 'space-between',
+  },
+  blktext: {
+    fontFamily: 'DMSans-Medium',
+    fontSize: moderateScale(11),
+    color: '#252A48',
+    marginLeft: horizontalScale(12),
+  },
+  percentTxt: {
+    fontFamily: 'DMSans-Medium',
+    fontSize: moderateScale(12),
+    paddingHorizontal: 2,
+  },
   btn: {
     backgroundColor: '#304FFE',
     height: moderateScale(50),
@@ -645,5 +675,10 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginTop: moderateScale(40),
     marginBottom: moderateScale(24),
+  },
+  btntext: {
+    fontFamily: 'DMSans-Medium',
+    fontSize: moderateScale(14),
+    color: '#fff',
   },
 });
