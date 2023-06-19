@@ -22,7 +22,6 @@ const CalculateEarnings = () => {
   const [list, setList] = useState();
 
   const baseUrl = 'https://dev-testnet.nordl.io';
-  const [poolId, setPoolId] = useState();
 
   const AmountArr = ['0', '3K', '6K', '12K', '15K', '18K', '21K'];
   const YearArr = ['10 yrs', '8 yrs', '6 yrs', '4 yrs', '2 yrs', 'Present'];
@@ -58,14 +57,14 @@ const CalculateEarnings = () => {
     }
   };
 
-  const poolDetails = async () => {
+  const poolDetails = async id => {
     try {
       const headers = {
         'Content-Type': 'application/json',
       };
       const {data} = await axios({
         method: 'GET',
-        url: '/api/product/calculator-details/' + poolId,
+        url: '/api/product/calculator-details/' + id,
         baseURL: baseUrl,
         headers,
       });
@@ -342,8 +341,8 @@ const CalculateEarnings = () => {
                       onPress={() => {
                         setType(item.poolName),
                           setInvested(!invested),
-                          setPoolId(item.id);
-                        poolDetails();
+                          // setPoolId(item.id);
+                          poolDetails(item.id);
                       }}>
                       <Text
                         style={{
