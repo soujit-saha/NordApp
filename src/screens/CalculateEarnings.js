@@ -3,6 +3,7 @@ import {
   Image,
   StyleSheet,
   Text,
+  TextInput,
   ToastAndroid,
   TouchableOpacity,
   View,
@@ -24,7 +25,7 @@ const CalculateEarnings = () => {
   // const [poolDetails, setPoolDetails] = useState();
   const [poolId, setPoolId] = useState();
 
-  const baseUrl = 'https://dev-testnet.nordl.io';
+  const baseUrl = 'https://api.nordl.io/';
 
   const AmountArr = ['0', '3K', '6K', '12K', '15K', '18K', '21K'];
   const YearArr = ['10 yrs', '8 yrs', '6 yrs', '4 yrs', '2 yrs', 'Present'];
@@ -166,24 +167,26 @@ const CalculateEarnings = () => {
           }}>
           <Text style={styles.textHead}>Invested Amount</Text>
           <View style={{flexDirection: 'row', alignItems: 'center'}}>
-            <View
-              style={{
-                width: horizontalScale(70),
-                height: moderateScale(23),
-                backgroundColor: '#F3F3F3',
-                borderRadius: moderateScale(11.5),
-                marginRight: moderateScale(8),
-                justifyContent: 'center',
-              }}>
-              <Text
+            <View>
+              <TextInput
+                value={amount.toString()}
+                onChangeText={text => setAmount(text)}
+                keyboardType="number-pad"
                 style={{
-                  fontFamily: 'DMSans-Medium',
+                  backgroundColor: '#F3F3F3',
+                  padding: 0,
+                  height: moderateScale(23),
+                  paddingHorizontal: horizontalScale(12),
+                  borderRadius: moderateScale(12),
+                  minWidth: horizontalScale(70),
                   fontSize: moderateScale(11),
                   color: '#252A48',
-                  marginLeft: horizontalScale(12),
-                }}>
-                {amount}
-              </Text>
+                  fontFamily: 'DMSans-Medium',
+                  textAlign: 'center',
+                  marginRight: horizontalScale(8),
+                }}
+              />
+              {/* <Text>{amount}</Text> */}
             </View>
             <TouchableOpacity
               style={{
@@ -486,11 +489,14 @@ const CalculateEarnings = () => {
           <Text
             style={{
               fontFamily: 'DMSans-Bold',
-              fontSize: moderateScale(19),
+              fontSize: moderateScale(16),
               color: '#9EACDB',
               width: '45%',
             }}>
-            {amount} USDT
+            {result
+              ? parseFloat(result?.resultData.at(-1).investedAmount).toFixed(2)
+              : '0.00'}
+            USDT
           </Text>
         </View>
         <View
@@ -514,7 +520,7 @@ const CalculateEarnings = () => {
           <Text
             style={{
               fontFamily: 'DMSans-Bold',
-              fontSize: moderateScale(20),
+              fontSize: moderateScale(16),
               color: '#2BA24C',
               width: '47%',
             }}>
@@ -546,7 +552,10 @@ const CalculateEarnings = () => {
               }}
             />
             <Text style={[styles.percentTxt, {color: '#2BA24C'}]}>
-              {result.absoluteReturns ? result.absoluteReturns : 0}%
+              {result.absoluteReturns
+                ? parseFloat(result.absoluteReturns).toFixed(2)
+                : 0}
+              %
             </Text>
           </View>
         ) : (
@@ -577,7 +586,10 @@ const CalculateEarnings = () => {
               }}
             />
             <Text style={[styles.percentTxt, {color: 'red'}]}>
-              {result?.absoluteReturns ? result.absoluteReturns : 0}%
+              {result?.absoluteReturns
+                ? parseFloat(result.absoluteReturns).toFixed(2)
+                : 0}
+              %
             </Text>
           </View>
         )}
