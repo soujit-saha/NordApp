@@ -456,7 +456,9 @@ const CalculateEarnings = () => {
                         ? horizontalScale(10)
                         : index == YearArr.length - 1
                         ? horizontalScale(0)
-                        : horizontalScale(30),
+                        : index == 0
+                        ? moderateScale(12)
+                        : horizontalScale(35),
                     fontFamily: 'DMSans-Medium',
                     fontSize: moderateScale(14),
                     color: '#000000',
